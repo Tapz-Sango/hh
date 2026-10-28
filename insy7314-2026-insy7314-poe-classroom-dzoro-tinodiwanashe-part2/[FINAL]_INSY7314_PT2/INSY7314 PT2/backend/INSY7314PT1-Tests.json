@@ -1,0 +1,259 @@
+{
+  "info": {
+    "name": "INSY7314 Validation Tests",
+    "description": "Testing validation and error handling - Member 3 Tasks",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://localhost:5000/api/health",
+          "protocol": "https",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "health"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "2. Register - INVALID (Should Fail - 400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"\",\n  \"email\": \"invalid-email\",\n  \"password\": \"123\"\n}"
+        },
+        "url": {
+          "raw": "https://localhost:5000/api/auth/register",
+          "protocol": "https",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "auth", "register"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "3. Register - VALID (Should Succeed - 201)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"SecurePass123\"\n}"
+        },
+        "url": {
+          "raw": "https://localhost:5000/api/auth/register",
+          "protocol": "https",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "auth", "register"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "4. Login - INVALID Credentials (Should Fail - 401)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"wrong@email.com\",\n  \"password\": \"wrongpassword\"\n}"
+        },
+        "url": {
+          "raw": "https://localhost:5000/api/auth/login",
+          "protocol": "https",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "auth", "login"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "5. Login - VALID (Get Token)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"SecurePass123\"\n}"
+        },
+        "url": {
+          "raw": "https://localhost:5000/api/auth/login",
+          "protocol": "https",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "auth", "login"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "6. Get Current User (Protected - Need Token)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer YOUR_TOKEN_HERE"
+          }
+        ],
+        "url": {
+          "raw": "https://localhost:5000/api/auth/me",
+          "protocol": "https",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "auth", "me"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "7. Create Service - INVALID (Should Fail - 400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer YOUR_TOKEN_HERE"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"\",\n  \"category\": \"\",\n  \"price\": \"not-a-number\",\n  \"duration\": -5\n}"
+        },
+        "url": {
+          "raw": "https://localhost:5000/api/services",
+          "protocol": "https",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "services"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "8. Create Service - VALID (Should Succeed - 201)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer YOUR_TOKEN_HERE"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Web Development\",\n  \"category\": \"Programming\",\n  \"description\": \"Full stack web development services\",\n  \"price\": 150,\n  \"duration\": 60\n}"
+        },
+        "url": {
+          "raw": "https://localhost:5000/api/services",
+          "protocol": "https",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "services"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "9. 404 Not Found",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://localhost:5000/api/nonexistent",
+          "protocol": "https",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "nonexistent"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "10. Booking - INVALID (Should Fail - 400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer YOUR_TOKEN_HERE"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"serviceId\": \"invalid-id\",\n  \"date\": \"2020-01-01\",\n  \"time\": \"25:70\"\n}"
+        },
+        "url": {
+          "raw": "https://localhost:5000/api/bookings",
+          "protocol": "https",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "bookings"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "11. Invalid ID in URL (Should Fail - 400)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer YOUR_TOKEN_HERE"
+          }
+        ],
+        "url": {
+          "raw": "https://localhost:5000/api/services/invalid-id",
+          "protocol": "https",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "services", "invalid-id"]
+        }
+      },
+      "response": []
+    }
+  ]
+}

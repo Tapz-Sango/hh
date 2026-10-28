@@ -1,0 +1,981 @@
+{
+  "info": {
+    "_postman_id": "93a8b067-dfd4-458e-89e5-2b4490517346",
+    "name": "INSY7314 Part 2 - Security Testing (Member 4)",
+    "description": "Expanded Newman-ready API test suite for HustleHub. Covers health/security headers, authentication, JWT protection, role-based access, service CRUD and ownership, booking creation/viewing, simulated transaction recording, booking completion, earnings, sanitisation, validation, 404 handling, and rate limiting.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://localhost:5000" },
+    { "key": "clientEmail", "value": "" },
+    { "key": "clientPassword", "value": "TestPass123" },
+    { "key": "clientToken", "value": "" },
+    { "key": "freelancerAEmail", "value": "" },
+    { "key": "freelancerAPassword", "value": "TestPass123" },
+    { "key": "freelancerAToken", "value": "" },
+    { "key": "freelancerBEmail", "value": "" },
+    { "key": "freelancerBPassword", "value": "TestPass123" },
+    { "key": "freelancerBToken", "value": "" },
+    { "key": "serviceId", "value": "" },
+    { "key": "bookingId", "value": "" },
+    { "key": "bookingDate", "value": "" },
+    { "key": "bookingTime", "value": "" },
+    { "key": "bookingAmount", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01 - Security Headers",
+      "item": [
+        {
+          "name": "Health Check + Security Headers",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/health",
+            "description": "Evidence for bullet 7: security headers and CSP."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Health check returns 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Content-Security-Policy header exists\", function () {",
+                  "    pm.expect(pm.response.headers.has(\"Content-Security-Policy\")).to.be.true;",
+                  "});",
+                  "pm.test(\"X-Content-Type-Options header exists\", function () {",
+                  "    pm.expect(pm.response.headers.has(\"X-Content-Type-Options\")).to.be.true;",
+                  "});",
+                  "pm.test(\"X-Frame-Options header exists\", function () {",
+                  "    pm.expect(pm.response.headers.has(\"X-Frame-Options\")).to.be.true;",
+                  "});",
+                  "pm.test(\"Strict-Transport-Security header exists\", function () {",
+                  "    pm.expect(pm.response.headers.has(\"Strict-Transport-Security\")).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Authentication / JWT",
+      "item": [
+        {
+          "name": "Register Client",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Client\",\n  \"email\": \"{{clientEmail}}\",\n  \"password\": \"{{clientPassword}}\",\n  \"role\": \"client\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var email = 'client_' + Date.now() + '@example.com';",
+                  "pm.collectionVariables.set(\"clientEmail\", email);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Client registration returns 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var res = pm.response.json();",
+                  "console.log('Register Client response:', JSON.stringify(res));",
+                  "var token = res.token || res.accessToken || (res.data && (res.data.token || res.data.accessToken));",
+                  "if (token) { pm.collectionVariables.set(\"clientToken\", token); }",
+                  "else { console.warn('No token found in Register Client response'); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register Freelancer A",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Freelancer A\",\n  \"email\": \"{{freelancerAEmail}}\",\n  \"password\": \"{{freelancerAPassword}}\",\n  \"role\": \"freelancer\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var email = 'freelancerA_' + Date.now() + '@example.com';",
+                  "pm.collectionVariables.set(\"freelancerAEmail\", email);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Freelancer A registration returns 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var res = pm.response.json();",
+                  "console.log('Register Freelancer A response:', JSON.stringify(res));",
+                  "var token = res.token || res.accessToken || (res.data && (res.data.token || res.data.accessToken));",
+                  "if (token) { pm.collectionVariables.set(\"freelancerAToken\", token); }",
+                  "else { console.warn('No token found in Register Freelancer A response'); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register Freelancer B",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Freelancer B\",\n  \"email\": \"{{freelancerBEmail}}\",\n  \"password\": \"{{freelancerBPassword}}\",\n  \"role\": \"freelancer\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var email = 'freelancerB_' + Date.now() + '@example.com';",
+                  "pm.collectionVariables.set(\"freelancerBEmail\", email);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Freelancer B registration returns 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var res = pm.response.json();",
+                  "console.log('Register Freelancer B response:', JSON.stringify(res));",
+                  "var token = res.token || res.accessToken || (res.data && (res.data.token || res.data.accessToken));",
+                  "if (token) { pm.collectionVariables.set(\"freelancerBToken\", token); }",
+                  "else { console.warn('No token found in Register Freelancer B response'); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Protected Route - No JWT",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/auth/me"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"No JWT is rejected - HTTP 401\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Protected Route - Client JWT",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{clientToken}}", "type": "string" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Valid JWT is accepted - HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Role-Based Access Control",
+      "item": [
+        {
+          "name": "Client Cannot Create Service",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/services",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{clientToken}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Client Attempt\",\n  \"description\": \"Client should be blocked\",\n  \"price\": 100,\n  \"category\": \"Development\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Client is blocked from freelancer service creation - HTTP 403\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Freelancer A Creates Service",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/services",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{freelancerAToken}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman Test Service\",\n  \"description\": \"Service created for security testing\",\n  \"price\": 250,\n  \"category\": \"Development\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Freelancer can create service\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var res = pm.response.json();",
+                  "console.log('Create Service response:', JSON.stringify(res));",
+                  "var service = res.service || res.data || res;",
+                  "var id = service._id || service.id;",
+                  "if (id) { pm.collectionVariables.set(\"serviceId\", id); }",
+                  "else { console.warn('No service id found in Create Service response'); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Client Cannot Access Earnings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/earnings/summary",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{clientToken}}", "type": "string" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Client is blocked from earnings - HTTP 403\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Ownership / Authorisation",
+      "item": [
+        {
+          "name": "Freelancer B Cannot Update Freelancer A Service",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/services/{{serviceId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{freelancerBToken}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Unauthorised Update\",\n  \"description\": \"Should not be allowed\",\n  \"price\": 999,\n  \"category\": \"Development\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Cross-user update is blocked - HTTP 403\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Freelancer B Cannot Delete Freelancer A Service",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/services/{{serviceId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{freelancerBToken}}", "type": "string" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Cross-user delete is blocked - HTTP 403\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 - Input Sanitisation",
+      "item": [
+        {
+          "name": "Malicious HTML Is Sanitised",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/services",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{freelancerAToken}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"<script>alert('XSS')</script>Safe Title\",\n  \"description\": \"<img src=x onerror=alert('XSS')>Safe description\",\n  \"price\": 300,\n  \"category\": \"Development\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Sanitisation request succeeds - HTTP 200 or 201\", function () {",
+                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "});",
+                  "var text = pm.response.text();",
+                  "pm.test(\"Response does not contain script tags\", function () {",
+                  "    pm.expect(text.toLowerCase()).to.not.include(\"<script\");",
+                  "});",
+                  "pm.test(\"Response does not contain onerror attribute\", function () {",
+                  "    pm.expect(text.toLowerCase()).to.not.include(\"onerror=\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 - Supporting API Tests",
+      "item": [
+        {
+          "name": "Invalid Registration",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"email\": \"not-an-email\",\n  \"password\": \"weak\",\n  \"role\": \"client\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invalid registration is rejected - HTTP 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invalid Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"does-not-exist@example.com\",\n  \"password\": \"WrongPass123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invalid login is rejected\", function () { pm.expect([401, 400]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown Endpoint",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/does-not-exist"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Unknown endpoint returns 404 - HTTP 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Services",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/services"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Services endpoint responds - HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "My Bookings - Client",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/bookings/my-bookings",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{clientToken}}", "type": "string" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Authenticated client can view own bookings - HTTP 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 - Complete Booking & Transaction Flow",
+      "description": "End-to-end business flow required for Part 2 demonstration: create service, book it, record simulated transaction, complete booking, verify earnings, and remove the test service.",
+      "item": [
+        {
+          "name": "Get Service By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/services/{{serviceId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Service lookup returns 200\", function () { pm.response.to.have.status(200); });",
+                  "var res = pm.response.json();",
+                  "var service = res.data || res.service || res;",
+                  "pm.test(\"Returned service matches the created service\", function () {",
+                  "    pm.expect(String(service._id || service.id)).to.eql(String(pm.collectionVariables.get(\"serviceId\")));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Freelancer A Updates Own Service",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/services/{{serviceId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{freelancerAToken}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman Test Service Updated\",\n  \"description\": \"Updated service used for the complete HustleHub workflow test\",\n  \"price\": 275,\n  \"category\": \"Development\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Owner can update own service\", function () { pm.response.to.have.status(200); });",
+                  "var res = pm.response.json();",
+                  "var service = res.data || res.service || res;",
+                  "pm.test(\"Updated service title is returned\", function () {",
+                  "    pm.expect(service.title).to.eql(\"Postman Test Service Updated\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Client Creates Booking + Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/bookings",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{clientToken}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceId\": \"{{serviceId}}\",\n  \"date\": \"{{bookingDate}}\",\n  \"time\": \"{{bookingTime}}\",\n  \"notes\": \"Newman end-to-end booking test\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var d = new Date();",
+                  "d.setDate(d.getDate() + 2);",
+                  "var dateStr = d.toISOString().slice(0, 10);",
+                  "pm.collectionVariables.set(\"bookingDate\", dateStr);",
+                  "pm.collectionVariables.set(\"bookingTime\", \"10:30\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Booking creation returns 201\", function () { pm.response.to.have.status(201); });",
+                  "var res = pm.response.json();",
+                  "console.log('Create Booking response:', JSON.stringify(res));",
+                  "pm.test(\"Booking and transaction are returned\", function () {",
+                  "    pm.expect(res.booking).to.exist;",
+                  "    pm.expect(res.transaction).to.exist;",
+                  "});",
+                  "pm.test(\"Transaction has a simulated payment reference\", function () {",
+                  "    pm.expect(res.transaction.paymentReference).to.match(/^SIM-/);",
+                  "    pm.expect(res.transaction.status).to.eql(\"pending\");",
+                  "});",
+                  "var bid = res.booking && (res.booking._id || res.booking.id);",
+                  "if (bid) { pm.collectionVariables.set(\"bookingId\", bid); }",
+                  "pm.collectionVariables.set(\"bookingAmount\", String(res.transaction.amount));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Client Views My Bookings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/bookings/my-bookings",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{clientToken}}", "type": "string" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Client can view bookings\", function () { pm.response.to.have.status(200); });",
+                  "var res = pm.response.json();",
+                  "pm.test(\"Created booking appears in client bookings\", function () {",
+                  "    var bid = pm.collectionVariables.get(\"bookingId\");",
+                  "    var found = (res.bookings || []).some(function (b) { return String(b._id || b.id) === String(bid); });",
+                  "    pm.expect(found).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Freelancer Views Received Booking",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/earnings/bookings",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{freelancerAToken}}", "type": "string" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Freelancer can view received bookings\", function () { pm.response.to.have.status(200); });",
+                  "var res = pm.response.json();",
+                  "pm.test(\"Created booking appears in received bookings\", function () {",
+                  "    var bid = pm.collectionVariables.get(\"bookingId\");",
+                  "    var found = (res.bookings || []).some(function (b) { return String(b._id || b.id) === String(bid); });",
+                  "    pm.expect(found).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Freelancer Completes Booking",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/bookings/{{bookingId}}/status",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{freelancerAToken}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Freelancer can complete the booking\", function () { pm.response.to.have.status(200); });",
+                  "var res = pm.response.json();",
+                  "pm.test(\"Booking status becomes completed\", function () {",
+                  "    pm.expect(res.booking.status).to.eql(\"completed\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Freelancer Earnings Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/earnings/summary",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{freelancerAToken}}", "type": "string" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Earnings summary returns 200\", function () { pm.response.to.have.status(200); });",
+                  "var res = pm.response.json();",
+                  "pm.test(\"Completed booking is reflected in earnings\", function () {",
+                  "    pm.expect(res.summary.completedCount).to.be.greaterThan(0);",
+                  "    pm.expect(Number(res.summary.totalEarned)).to.be.at.least(Number(pm.collectionVariables.get(\"bookingAmount\")));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Freelancer Transaction History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/earnings/transactions",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{freelancerAToken}}", "type": "string" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Transaction history returns 200\", function () { pm.response.to.have.status(200); });",
+                  "var res = pm.response.json();",
+                  "var bookingId = pm.collectionVariables.get(\"bookingId\");",
+                  "var transaction = (res.transactions || []).find(function (tx) {",
+                  "    var id = (tx.bookingId && (tx.bookingId._id || tx.bookingId.id)) || tx.bookingId;",
+                  "    return String(id) === String(bookingId);",
+                  "});",
+                  "pm.test(\"Booking transaction is recorded\", function () {",
+                  "    pm.expect(transaction).to.exist;",
+                  "    pm.expect(transaction.status).to.eql(\"completed\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Own Service",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/services/{{serviceId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{freelancerAToken}}", "type": "string" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Owner can delete own service\", function () { pm.response.to.have.status(200); });",
+                  "var res = pm.response.json();",
+                  "pm.test(\"Delete confirmation is returned\", function () { pm.expect(res.success).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08 - Rate Limiting (MANUAL)",
+      "description": "Do not run this folder as a normal collection run. The authentication limiter is 10 requests per 15 minutes and the booking limiter is 30 requests per 15 minutes. Send the relevant request repeatedly until HTTP 429 appears, then capture the response as evidence.",
+      "item": [
+        {
+          "name": "Auth Rate Limit - Send Repeatedly",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Send this same request repeatedly. After the configured limit is reached, expected status is 429 Too Many Requests.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"rate-limit-test@example.com\",\n  \"password\": \"WrongPass123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Rate-limit evidence request\", function () {",
+                  "    pm.expect([401, 429]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Booking Rate Limit - Send Repeatedly",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/bookings",
+            "description": "Send this same request repeatedly only after confirming a valid booking request works. Expected rate-limit response is 429.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{clientToken}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceId\": \"{{serviceId}}\",\n  \"date\": \"2099-12-31\",\n  \"time\": \"10:00\",\n  \"notes\": \"Rate limit test\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Rate-limit evidence request\", function () {",
+                  "    pm.expect([400, 401, 403, 404, 429]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
